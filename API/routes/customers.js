@@ -55,4 +55,41 @@ router.get('/:id', (req, res) => {
   });
 });
 
+
+router.get('/:id/orders', (req, res) => {
+  const customerId = req.params.id;
+
+  const query = `
+    SELECT orders.*
+    FROM orders
+    WHERE orders.user_id = ?;
+  `;
+
+  db.all(query, [customerId], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch orders' });
+    if (rows.length === 0) return res.status(404).json({ error: 'No orders found for this customer' });
+
+    res.json({ customer_id: customerId, orders: rows });
+  });
+});
+
+
+router.get('/orders/:orderId', (req, res) => {
+  const orderId = req.params.orderId;
+
+  const query = `
+    SELECT orders.*, users.name AS customer_name
+    FROM orders
+    JOIN users ON orders.user_id = users.user_id
+    WHERE orders.order_id = ?;
+  `;
+
+  db.get(query, [orderId], (err, row) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch order details' });
+    if (!row) return res.status(404).json({ error: 'Order not found' });
+
+    res.json(row);
+  });
+});
+
 module.exports = router;
